@@ -45,30 +45,62 @@ function forwardPass(input: number[], weights: number[][], biases: number[], act
   return output;
 }
 
-function predict(input: number[], params: NNParams) {
-  let result = input;
+// function arraysAreEqual(arr1: any, arr2: any) {
+//   if (arr1.length !== arr2.length) return false;
 
-  let result1 = forwardPass(result, params.layer_1.weights, params.layer_1.biases, 'relu');
+//   for (let i = 0; i < arr1.length; i++) {
+//     if (Array.isArray(arr1[i]) && Array.isArray(arr2[i])) {
+//       if (!arraysAreEqual(arr1[i], arr2[i])) return false;
+//     } else if (arr1[i] !== arr2[i]) {
+//       return false;
+//     }
+//   }
 
-  let result2 = forwardPass(result1, params.layer_2.weights, params.layer_2.biases, 'relu');
-
-  let result3 = forwardPass(result2, params.layer_3.weights, params.layer_3.biases, 'softmax');
-
-  return result3;
-}
+//   return true;
+// }
 
 const percScreen = 0.80
 const spaceWith = 16
+const gridSize = 28
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [windowSize, setWindowSize] = useState({ width: window.innerHeight * percScreen, height: window.innerHeight * percScreen });
-  const [grid, setGrid] = useState<number[][]>([])
+  const [grid, setGrid] = useState<number[][]>(Array.from({ length: gridSize }, () => Array(gridSize).fill(0)))
   const [drawing, setDrawing] = useState(false);
   const [params, setParams] = useState<NNParams>(param);
-  const [circleSize, setCircleSize] = useState<string>(`${((window.innerHeight * percScreen)/(spaceWith*2-1))}px`)
+  const [circleSize, setCircleSize] = useState<string>(`${((window.innerHeight * percScreen) / (spaceWith + spaceWith * 0.5 - 0.5))}px`)
+  const [gapSize, setGapSize] = useState<string>(`${((window.innerHeight * percScreen) / (2 * spaceWith + spaceWith - 1))}px`)
   const circlesPerRow = [16, 16, 10];
+  const [circleConditions, setCircleConditions] = useState<number[]>(Array(circlesPerRow.reduce((acc, val) => acc + val)).fill(0))
 
+
+  function predict(input: number[], params: NNParams) {
+    let result = input;
+
+    let result1 = forwardPass(result, params.layer_1.weights, params.layer_1.biases, 'relu');
+
+    let result2 = forwardPass(result1, params.layer_2.weights, params.layer_2.biases, 'relu');
+
+    let result3 = forwardPass(result2, params.layer_3.weights, params.layer_3.biases, 'softmax');
+
+    let maxResult1 = Math.max(...result1)
+    let maxResult2 = Math.max(...result2)
+
+
+    setCircleConditions([...result1.map(a => a / maxResult1), ...result2.map(a => a / maxResult2), ...result3])
+
+    return result3;
+  }
+
+  useEffect(() => {
+
+    var flattenedGrid = grid.flat();
+    if (!params) return
+    predict(flattenedGrid, params)
+
+
+  }, [grid]);
 
   useEffect(() => {
 
@@ -85,7 +117,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const gridSize = 28;
     setGrid(Array.from({ length: gridSize }, () => Array(gridSize).fill(0)));
 
     const canvas = canvasRef.current;
@@ -114,25 +145,33 @@ function App() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.stroke();
 
-    setCircleSize(`${((window.innerHeight * percScreen)/31)}px`)
+    setCircleSize(`${((window.innerHeight * percScreen) / (spaceWith + spaceWith * 0.5 - 0.5))}px`)
+    setGapSize(`${((window.innerHeight * percScreen) / (2 * spaceWith + spaceWith - 1))}px`)
   }, [windowSize]);
 
 
-  const renderCircles = (num: number) => (
-    
+  const renderCircles = (circleArray: number[], column: number) => {
+    let addNumber = 0
+    if (column > 0) {
+      //So our circle index stays consistent with circleConditions
+      addNumber += circleArray.slice(0, column).reduce((acc, val) => acc + val)
+    }
 
-    Array.from({ length: num }, (_, index) => 
-    <div key={index} style={{
-      height: circleSize,
-      width: circleSize
-    }} className="circle" />
-   )
-  );
+
+    return Array.from({ length: circleArray[column] }, (_, index) => {
+      return <div key={index + addNumber} style={{
+        height: circleSize,
+        width: circleSize,
+        backgroundColor: `rgba(255,255,255,${circleConditions[index+addNumber]})`
+      }} className="circle" />
+    }
+    )
+  };
 
   const renderRows = (circlesArray: number[]) => (
-    circlesArray.map((num, index) => (
-      <div key={index} style={{gap: circleSize}} className="row">
-        {renderCircles(num)}
+    circlesArray.map((_, index) => (
+      <div key={index} style={{ gap: gapSize }} className="row">
+        {renderCircles(circlesArray, index)}
       </div>
     ))
   );
@@ -158,10 +197,12 @@ function App() {
     ctx.fillStyle = 'black';
     ctx.fillRect(cellX * (windowSize.width / gridSize), cellY * (windowSize.height / gridSize), windowSize.width / gridSize, windowSize.height / gridSize);
 
-    const newGrid = [...grid];
-    newGrid[cellY][cellX] = 1;
 
-    setGrid(newGrid);
+    if (grid[cellY][cellX] == 0) {
+      const newGrid = [...grid];
+      newGrid[cellY][cellX] = 1;
+      setGrid(newGrid);
+    }
   }
 
   const clearCanvasAndGrid = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -199,7 +240,6 @@ function App() {
     setDrawing(false);
 
     var flattenedGrid = grid.flat();
-    // console.log(flattenedGrid)
     if (!params) return
     var predicted = predict(flattenedGrid, params)
 
@@ -209,6 +249,7 @@ function App() {
     }, 0);
 
     console.log(maxIndex)
+
   };
 
 
