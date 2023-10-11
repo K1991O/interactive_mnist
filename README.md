@@ -1,2 +1,2 @@
-# interactive_mnist
-A canvas users can input numbers and it shows how nodes connections result in a answer.
+# Interactive MNIST Model
+A canvas where users can input numbers and it shows how node connections result in an answer.
