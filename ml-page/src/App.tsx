@@ -16,42 +16,13 @@ type NNParams = {
 };
 
 
-
-
-const fetchWeightsAndBiases = async (): Promise<NNParams | null> => {
-  try {
-    const response = await fetch('/weights_and_biases.json');
-
-    if (!response.ok) {
-      console.error('Network response was not ok:', response);
-      return null;
-    }
-
-    const text = await response.text();
-
-
-    try {
-      const myJson: NNParams = JSON.parse(text);
-      return myJson;
-    } catch (jsonError) {
-      console.error('Error parsing JSON:', jsonError);
-      return null;
-    }
-
-  } catch (error) {
-    console.error('Error during fetch operation: ', error);
-    return null;
-  }
-};
-
-
 function relu(x: number) {
   return Math.max(0, x);
 }
 
 function softmax(arr: number[]) {
-  return arr.map(function(value,index) { 
-    return Math.exp(value) / arr.map( function(y /*value*/){ return Math.exp(y) } ).reduce( function(a,b){ return a+b })
+  return arr.map(function (value, index) {
+    return Math.exp(value) / arr.map(function (y /*value*/) { return Math.exp(y) }).reduce(function (a, b) { return a + b })
   })
 }
 
@@ -86,21 +57,25 @@ function predict(input: number[], params: NNParams) {
   return result3;
 }
 
+const percScreen = 0.80
+const spaceWith = 16
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [windowSize, setWindowSize] = useState({ width: window.innerHeight * 0.65, height: window.innerHeight * 0.65 });
+  const [windowSize, setWindowSize] = useState({ width: window.innerHeight * percScreen, height: window.innerHeight * percScreen });
   const [grid, setGrid] = useState<number[][]>([])
   const [drawing, setDrawing] = useState(false);
   const [params, setParams] = useState<NNParams>(param);
+  const [circleSize, setCircleSize] = useState<string>(`${((window.innerHeight * percScreen)/(spaceWith*2-1))}px`)
+  const circlesPerRow = [16, 16, 10];
 
 
   useEffect(() => {
 
     function handleResize() {
       setWindowSize({
-        width: window.innerHeight * 0.65,
-        height: window.innerHeight * 0.65
+        width: window.innerHeight * percScreen,
+        height: window.innerHeight * percScreen
       });
     }
 
@@ -138,8 +113,29 @@ function App() {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.stroke();
+
+    setCircleSize(`${((window.innerHeight * percScreen)/31)}px`)
   }, [windowSize]);
 
+
+  const renderCircles = (num: number) => (
+    
+
+    Array.from({ length: num }, (_, index) => 
+    <div key={index} style={{
+      height: circleSize,
+      width: circleSize
+    }} className="circle" />
+   )
+  );
+
+  const renderRows = (circlesArray: number[]) => (
+    circlesArray.map((num, index) => (
+      <div key={index} style={{gap: circleSize}} className="row">
+        {renderCircles(num)}
+      </div>
+    ))
+  );
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     setDrawing(true);
@@ -198,25 +194,25 @@ function App() {
     setGrid(Array.from({ length: gridSize }, () => Array(gridSize).fill(0)));
   };
 
-
-
   const endDrawing = () => {
     if (!drawing) return
-    console.log("end drawing")
     setDrawing(false);
 
     var flattenedGrid = grid.flat();
-    console.log(flattenedGrid)
+    // console.log(flattenedGrid)
     if (!params) return
     var predicted = predict(flattenedGrid, params)
 
 
     const maxIndex = predicted.reduce((maxIndex, currentValue, currentIndex, array) => {
       return currentValue > array[maxIndex] ? currentIndex : maxIndex;
-    }, 0); 
+    }, 0);
 
     console.log(maxIndex)
   };
+
+
+
 
   return (
     <div className="App">
@@ -229,6 +225,9 @@ function App() {
           onMouseLeave={endDrawing}
           onContextMenu={clearCanvasAndGrid}
         />
+        <div className="NN-layer">
+          {renderRows(circlesPerRow)}
+        </div>
       </header>
     </div>
   );
