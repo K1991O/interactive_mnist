@@ -60,20 +60,19 @@ function forwardPass(input: number[], weights: number[][], biases: number[], act
 // }
 
 const percScreen = 0.80
-const spaceWith = 16
 const gridSize = 28
 
 function App() {
+  const circlesPerRow = [16, 16, 10];
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [windowSize, setWindowSize] = useState({ width: window.innerHeight * percScreen, height: window.innerHeight * percScreen });
   const [grid, setGrid] = useState<number[][]>(Array.from({ length: gridSize }, () => Array(gridSize).fill(0)))
   const [drawing, setDrawing] = useState(false);
   const [params, setParams] = useState<NNParams>(param);
-  const [circleSize, setCircleSize] = useState<string>(`${((window.innerHeight * percScreen) / (spaceWith + spaceWith * 0.5 - 0.5))}px`)
-  const [gapSize, setGapSize] = useState<string>(`${((window.innerHeight * percScreen) / (2 * spaceWith + spaceWith - 1))}px`)
-  const circlesPerRow = [16, 16, 10];
+  const [circleSize, setCircleSize] = useState<string>(`${((window.innerHeight * percScreen) / (Math.max(...circlesPerRow) + Math.max(...circlesPerRow) * 0.5 - 0.5))}px`)
+  const [gapSize, setGapSize] = useState<string>(`${((window.innerHeight * percScreen) / (2 * Math.max(...circlesPerRow) + Math.max(...circlesPerRow) - 1))}px`)
   const [circleConditions, setCircleConditions] = useState<number[]>(Array(circlesPerRow.reduce((acc, val) => acc + val)).fill(0))
-
+  const [predictedValue, setPredictedValue] = useState<string>('-')
 
   function predict(input: number[], params: NNParams) {
     let result = input;
@@ -145,8 +144,8 @@ function App() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.stroke();
 
-    setCircleSize(`${((window.innerHeight * percScreen) / (spaceWith + spaceWith * 0.5 - 0.5))}px`)
-    setGapSize(`${((window.innerHeight * percScreen) / (2 * spaceWith + spaceWith - 1))}px`)
+    setCircleSize(`${((window.innerHeight * percScreen) / (Math.max(...circlesPerRow) + Math.max(...circlesPerRow) * 0.5 - 0.5))}px`)
+    setGapSize(`${((window.innerHeight * percScreen) / (2 * Math.max(...circlesPerRow) + Math.max(...circlesPerRow) - 1))}px`)
   }, [windowSize]);
 
 
@@ -194,13 +193,13 @@ function App() {
     const cellY = Math.floor(y / (windowSize.height / gridSize));
 
 
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fillRect(cellX * (windowSize.width / gridSize), cellY * (windowSize.height / gridSize), windowSize.width / gridSize, windowSize.height / gridSize);
 
 
-    if (grid[cellY][cellX] == 0) {
+    if (grid[cellY][cellX] != 1) {
       const newGrid = [...grid];
-      newGrid[cellY][cellX] = 1;
+      newGrid[cellY][cellX] < 0.5 ? newGrid[cellY][cellX] += 0.5 : newGrid[cellY][cellX] = 1
       setGrid(newGrid);
     }
   }
@@ -248,7 +247,7 @@ function App() {
       return currentValue > array[maxIndex] ? currentIndex : maxIndex;
     }, 0);
 
-    console.log(maxIndex)
+    setPredictedValue(predicted[maxIndex] > 0.8 ? `${maxIndex}` : '-')
 
   };
 
@@ -268,6 +267,11 @@ function App() {
         />
         <div className="NN-layer">
           {renderRows(circlesPerRow)}
+        </div>
+        <div style={{width: "40px"}}>
+        <h1>
+          {predictedValue}
+        </h1>
         </div>
       </header>
     </div>
