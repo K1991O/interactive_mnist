@@ -28,7 +28,6 @@
 .NN-layer {
   display: flex;
   flex-direction: row;
-  gap: 10vw;
   align-items: center;
   justify-self: center;
 }

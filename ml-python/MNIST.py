@@ -16,6 +16,8 @@ test_labels = to_categorical(test_labels)
 if True:
     model = models.Sequential()
     model.add(layers.Flatten(input_shape=(28, 28, 1)))
+    model.add(layers.Dense(300, activation='relu'))
+    model.add(layers.Dense(300, activation='relu'))
     model.add(layers.Dense(16, activation='relu'))
     model.add(layers.Dense(16, activation='relu'))
     model.add(layers.Dense(10, activation='softmax'))
@@ -26,7 +28,7 @@ if True:
                   metrics=['accuracy'])
 
     # Train the model
-    model.fit(train_images, train_labels, epochs=10000, batch_size=64, validation_data=(test_images, test_labels))
+    model.fit(train_images, train_labels, epochs=200, batch_size=64, validation_data=(test_images, test_labels))
 
     weights_and_biases = {}
     print(model.layers)

@@ -8,7 +8,7 @@ from keras.utils import to_categorical
 import json
 
 
-with open('weights_and_biases.json', 'r') as f:
+with open('weights_and_biases_300_16.json', 'r') as f:
     weights_and_biases = json.load(f)
 
 new_model = models.Sequential()
