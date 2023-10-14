@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import param from './weights_and_biases_3_16.json'
+import param from './weights_and_biases_300_16.json'
 
 type NNLayer = {
   weights: number[][];
@@ -12,8 +12,8 @@ type NNParams = {
   layer_1: NNLayer;
   layer_2: NNLayer;
   layer_3: NNLayer;
-  // layer_4: NNLayer;
-  // layer_5: NNLayer;
+  layer_4: NNLayer;
+  layer_5: NNLayer;
   // Add more layers as needed
 };
 
@@ -62,7 +62,7 @@ function App() {
   const [windowSize, setWindowSize] = useState({ width: window.innerHeight * percScreen, height: window.innerHeight * percScreen });
   const [grid, setGrid] = useState<number[][]>(Array.from({ length: gridSize }, () => Array(gridSize).fill(0)))
   const [drawing, setDrawing] = useState(false);
-  const [params, setParams] = useState<NNParams>(param);
+  const [params, setParams] = useState<any>(param);
   const [circleSize, setCircleSize] = useState<string>(`${((window.innerHeight * percScreen) / (Math.max(...circlesPerRow) + Math.max(...circlesPerRow) * 0.5 - 0.5))}px`)
   const [gapSize, setGapSize] = useState<string>(`${((window.innerHeight * percScreen) / (2 * Math.max(...circlesPerRow) + Math.max(...circlesPerRow) - 1))}px`)
   const [circleConditions, setCircleConditions] = useState<number[]>(Array(circlesPerRow.reduce((acc, val) => acc + val)).fill(0))
@@ -73,11 +73,14 @@ function App() {
 
     let result = input;
 
-    let result1 = forwardPass(result, params.layer_1.weights, params.layer_1.biases, 'relu');
+    let result_hidden_1 = forwardPass(result, params.layer_1.weights, params.layer_1.biases, 'relu');
+    let result_hidden_2 = forwardPass(result_hidden_1, params.layer_2.weights, params.layer_2.biases, 'relu');
 
-    let result2 = forwardPass(result1, params.layer_2.weights, params.layer_2.biases, 'relu');
+    let result1 = forwardPass(result_hidden_2, params.layer_3.weights, params.layer_3.biases, 'relu');
 
-    let result3 = forwardPass(result2, params.layer_3.weights, params.layer_3.biases, 'softmax');
+    let result2 = forwardPass(result1, params.layer_4.weights, params.layer_4.biases, 'relu');
+
+    let result3 = forwardPass(result2, params.layer_5.weights, params.layer_5.biases, 'softmax');
 
     let maxResult1 = Math.max(...result1)
     let maxResult2 = Math.max(...result2)
@@ -155,12 +158,17 @@ function App() {
 
 
     return Array.from({ length: circleArray[column] }, (_, index) => {
-      return <div key={index + addNumber} style={{
+      return (
+        <div className='NN-layer'>
+      <div key={index + addNumber} style={{
         height: circleSize,
         width: circleSize,
         backgroundColor: `rgba(255,255,255,${circleConditions[index + addNumber]})`
       }} className="circle"
       title={`${nodeVale[index + addNumber]}`} />
+      {column == circleArray.length - 1 && (<h6 style={{margin:"0px 0px 0px 10px"}}>{index}</h6>)}
+      </div>
+      )
     }
     )
   };
@@ -194,7 +202,6 @@ function App() {
           />
         );
         someNumber += 1
-        console.log(someNumber)
       }
     }
     
@@ -210,9 +217,9 @@ function App() {
   const renderRows = (circlesArray: number[]) => (
     circlesArray.map((_, index) => (
       <>
-        {/* {index != 0 &&
+        {index != 0 &&
           renderLines(circlesArray[index-1], circlesArray[index])
-        } */}
+        }
         <div key={index} style={{ gap: gapSize }} className="row">
           {renderCircles(circlesArray, index)}
         </div>
@@ -237,10 +244,7 @@ function App() {
     const cellX = Math.floor(x / (windowSize.width / gridSize));
     const cellY = Math.floor(y / (windowSize.height / gridSize));
 
-
-
     const increaseVal = 0.33333
-
 
     if (grid[cellY][cellX] != 1) {
       const newGrid = [...grid.map(row => [...row])];
@@ -353,15 +357,6 @@ function App() {
 
     setPredictedValue(predicted[maxIndex] > 0.8 ? `${maxIndex}` : '-')
 
-
-    for (let i = 0; i < grid.length; i++) {
-      var printyThing = ' '
-      for (let j = 0; j < grid[i].length; j++) {
-        printyThing += grid[i][j] == 1 ? `1.0 ` : grid[i][j] == 0 ? `0.0 ` : `${grid[i][j]} `
-      }
-      console.log(printyThing)
-    }
-    console.log('')
   };
 
 
