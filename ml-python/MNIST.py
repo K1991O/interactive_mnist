@@ -16,8 +16,6 @@ test_labels = to_categorical(test_labels)
 if True:
     model = models.Sequential()
     model.add(layers.Flatten(input_shape=(28, 28, 1)))
-    model.add(layers.Dense(300, activation='relu'))
-    model.add(layers.Dense(300, activation='relu'))
     model.add(layers.Dense(16, activation='relu'))
     model.add(layers.Dense(16, activation='relu'))
     model.add(layers.Dense(10, activation='softmax'))
